@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="費用精算">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#1f4e79">
+<meta name="color-scheme" content="light dark">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>費用精算</title>
+<style>
+:root{
+  --bg:#f3f5f8; --card:#ffffff; --text:#1c2733; --sub:#66737f; --accent:#1f4e79;
+  --accent-soft:#e6eef7; --line:#d8dfe6; --danger:#b3261e; --ok:#1b7a43; --on-accent:#ffffff;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0f1317; --card:#1a2027; --text:#e7ecf1; --sub:#9aa7b3; --accent:#6aa9e6;
+    --accent-soft:#223445; --line:#2c3640; --danger:#f2b8b5; --ok:#7fd6a0; --on-accent:#0f1317;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",sans-serif;
+  font-size:16px; line-height:1.5;
+  padding-bottom:calc(76px + env(safe-area-inset-bottom));
+}
+header{
+  position:sticky; top:0; z-index:5; background:var(--accent); color:var(--on-accent);
+  padding:calc(10px + env(safe-area-inset-top)) 16px 10px;
+  display:flex; align-items:baseline; gap:10px;
+}
+header h1{margin:0; font-size:18px}
+#hTitle{font-size:14px; opacity:.9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+main{padding:12px 14px; max-width:640px; margin:0 auto}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:12px}
+h2{font-size:15px; margin:0 0 10px; color:var(--accent)}
+label{display:block; font-size:14px; color:var(--sub); margin:12px 0 4px}
+label:first-child{margin-top:0}
+input[type=text],input[type=search],select{
+  width:100%; font-size:16px; padding:11px 12px; border:1px solid var(--line); border-radius:10px;
+  background:var(--card); color:var(--text); -webkit-appearance:none; appearance:none;
+}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--sub) 50%),linear-gradient(135deg,var(--sub) 50%,transparent 50%);
+  background-position:calc(100% - 20px) 50%,calc(100% - 14px) 50%; background-size:6px 6px,6px 6px; background-repeat:no-repeat; padding-right:34px}
+input:focus,select:focus{outline:2px solid var(--accent); outline-offset:0}
+.row{display:flex; gap:8px; align-items:center}
+.row > *{flex:1}
+.row > .fixed{flex:0 0 auto}
+.hint{font-size:13px; color:var(--sub); min-height:1.3em; margin-top:3px}
+.hint.ok{color:var(--ok)}
+.sub{color:var(--sub); font-size:14px}
+button{font:inherit; touch-action:manipulation}
+.btn{
+  display:block; width:100%; min-height:48px; padding:10px 14px; border:0; border-radius:12px;
+  background:var(--accent); color:var(--on-accent); font-weight:700; font-size:16px;
+}
+.btn.light{background:var(--accent-soft); color:var(--accent)}
+.btn.danger{background:transparent; color:var(--danger); border:1px solid var(--danger)}
+.btn.small{display:inline-block; width:auto; min-height:40px; padding:6px 14px; font-size:15px}
+.btn:disabled{opacity:.45}
+.chips{display:flex; flex-wrap:wrap; gap:8px}
+.chip{
+  min-height:44px; padding:8px 16px; border-radius:22px; border:1px solid var(--line);
+  background:var(--card); color:var(--text); font-size:16px;
+}
+.chip.on{background:var(--accent); border-color:var(--accent); color:var(--on-accent); font-weight:700}
+.pchip{
+  display:inline-flex; align-items:center; gap:6px; min-height:40px; padding:4px 6px 4px 14px; border-radius:20px;
+  background:var(--accent-soft); color:var(--text); font-size:16px;
+}
+.pchip .x{border:0; background:transparent; color:var(--sub); font-size:16px; min-width:36px; min-height:36px; border-radius:18px}
+.err{background:#fdecea; color:#8c1d18; border-radius:10px; padding:10px 12px; margin:10px 0; font-size:15px}
+@media (prefers-color-scheme: dark){ .err{background:#3b1f1d; color:#f2b8b5} }
+.editing{background:var(--accent-soft); color:var(--accent); border-radius:10px; padding:8px 12px; margin-bottom:10px; font-weight:700; font-size:15px}
+.pay{border-top:1px solid var(--line); padding:12px 0}
+.pay:first-of-type{border-top:0; padding-top:0}
+.pay .when{font-size:13px; color:var(--sub)}
+.pay .what{font-weight:700; margin:2px 0}
+.pay .amt{font-size:18px; font-weight:700}
+.pay .who{font-size:14px; color:var(--sub)}
+.pay .acts{display:flex; gap:8px; margin-top:8px}
+.transfer{display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--line); gap:8px}
+.transfer:first-of-type{border-top:0}
+.transfer .names{font-size:17px}
+.transfer .money{font-size:20px; font-weight:800; color:var(--accent); white-space:nowrap}
+table{width:100%; border-collapse:collapse; font-size:14px}
+th,td{padding:8px 4px; border-top:1px solid var(--line); text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--sub); font-weight:600; border-top:0}
+.plus{color:var(--ok); font-weight:700}
+.minus{color:var(--danger); font-weight:700}
+details{margin-top:12px}
+summary{color:var(--sub); font-size:14px}
+pre{white-space:pre-wrap; word-break:break-all; font:inherit; font-size:13px; background:var(--bg); padding:10px; border-radius:10px}
+.tabs{
+  position:fixed; left:0; right:0; bottom:0; z-index:6; display:flex; background:var(--card);
+  border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom);
+}
+.tabs button{flex:1; min-height:56px; border:0; background:transparent; color:var(--sub); font-size:14px; font-weight:600}
+.tabs button.on{color:var(--accent); box-shadow:inset 0 3px 0 var(--accent)}
+#toast{
+  position:fixed; left:50%; bottom:calc(86px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+  background:#223; color:#fff; padding:10px 18px; border-radius:20px; font-size:15px; opacity:0; pointer-events:none;
+  transition:opacity .2s; z-index:9; max-width:90%; text-align:center;
+}
+#toast.show{opacity:.95}
+</style>
+</head>
+<body>
+<header><h1>費用精算</h1><div id="hTitle"></div></header>
+<main>
+
+<!-- 設定 -->
+<section id="tab-setup" class="tab" hidden>
+  <div class="card">
+    <h2>タイトル(イベント名)</h2>
+    <input type="text" id="title" placeholder="例:淡路島旅行" autocomplete="off" maxlength="40">
+  </div>
+  <div class="card">
+    <h2>参加者(2人以上)</h2>
+    <div class="row">
+      <input type="text" id="pname" placeholder="名前を入力" autocomplete="off" maxlength="12" enterkeyhint="done">
+      <button class="btn small fixed" id="padd" type="button">追加</button>
+    </div>
+    <div id="perr" class="err" hidden></div>
+    <div class="chips" id="pList" style="margin-top:12px"></div>
+    <label for="rounder">端数を持つ人(割り切れないあまりを負担する人)</label>
+    <select id="rounder"></select>
+    <div class="hint">精算結果では、この人の名前がいつも最後に並びます。</div>
+  </div>
+  <div class="card">
+    <h2>その他</h2>
+    <p class="sub" style="margin-top:0">入力した内容は、このiPhoneの中に自動で保存されます。ホーム画面に追加したアイコンから開いてください(Safariで入力した内容は、アイコンのほうには引き継がれません)。</p>
+    <button class="btn danger" id="reset" type="button">新しく始める(今の内容を消す)</button>
+  </div>
+</section>
+
+<!-- 入力 -->
+<section id="tab-input" class="tab" hidden>
+  <div class="card">
+    <div id="editing" class="editing" hidden>修正中です。直したら「この内容で更新する」を押してください。</div>
+    <div id="need" class="err" hidden>先に「設定」で、参加者を2人以上登録してください。</div>
+    <div class="row">
+      <div>
+        <label for="fdate">日付(年は20から続けて)</label>
+        <input type="text" id="fdate" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="261027" autocomplete="off">
+      </div>
+      <div>
+        <label for="ftime">時間(24時間・4けた)</label>
+        <input type="text" id="ftime" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="1430" autocomplete="off">
+      </div>
+    </div>
+    <div class="row">
+      <div class="hint" id="dateHint"></div>
+      <div class="hint" id="timeHint"></div>
+    </div>
+    <label for="fwhat">どこで・何を</label>
+    <input type="text" id="fwhat" placeholder="例:淡路島バーガー 昼食" autocomplete="off" maxlength="60" enterkeyhint="next">
+    <label for="famount">いくら(円)</label>
+    <input type="text" id="famount" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="3500" autocomplete="off">
+    <div class="hint" id="amountHint"></div>
+    <label>支払った人</label>
+    <div class="chips" id="payerChips"></div>
+    <label>割り勘の対象者(タップで入れる・外す)</label>
+    <div class="chips" id="targetChips"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn light small" id="allOn" type="button">全員にする</button>
+      <button class="btn light small" id="allOff" type="button">全員外す</button>
+    </div>
+    <div id="ferr" class="err" hidden></div>
+    <button class="btn" id="submit" type="button" style="margin-top:14px">この支払いを追加</button>
+    <button class="btn light" id="cancelEdit" type="button" style="margin-top:8px" hidden>修正をやめる</button>
+  </div>
+</section>
+
+<!-- 一覧 -->
+<section id="tab-list" class="tab" hidden>
+  <div class="card">
+    <h2 id="listHead">支払いの一覧</h2>
+    <div id="payList"></div>
+  </div>
+</section>
+
+<!-- 精算 -->
+<section id="tab-result" class="tab" hidden>
+  <div id="resultBody"></div>
+</section>
+
+</main>
+
+<nav class="tabs">
+  <button type="button" data-tab="setup">設定</button>
+  <button type="button" data-tab="input">入力</button>
+  <button type="button" data-tab="list" id="tabListBtn">一覧</button>
+  <button type="button" data-tab="result">精算</button>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'seisan_iphone_v1';
+  var YOUBI = ['日', '月', '火', '水', '木', '金', '土'];
+  var TABS = ['setup', 'input', 'list', 'result'];
+
+  function $(id) { return document.getElementById(id); }
+  function norm(s) { return String(s == null ? '' : s).normalize('NFKC').trim(); }
+  function onlyDigits(s) { return norm(s).replace(/[^0-9]/g, ''); }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function comma(v) { return String(v).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+  function yen(v) { return comma(v) + '円'; }
+  function signedYen(v) { return v > 0 ? '+' + yen(v) : (v < 0 ? '-' + yen(-v) : '0円'); }
+
+  /* ---------- 画面の部品を作る小道具(入力された文字は、必ず文字として表示する) ---------- */
+  function h(tag, attrs) {
+    var e = document.createElement(tag);
+    if (attrs) {
+      Object.keys(attrs).forEach(function (k) {
+        var v = attrs[k];
+        if (k === 'class') e.className = v;
+        else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+        else e.setAttribute(k, v);
+      });
+    }
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      e.append(c);
+    }
+    return e;
+  }
+
+  /* ---------- データ ---------- */
+  function blank() {
+    return { title: '', participants: [], rounder: '', payments: [], nextId: 1, lastDate: '' };
+  }
+
+  function sanitize(d) {
+    var s = blank();
+    if (!d || typeof d !== 'object') return s;
+    s.title = typeof d.title === 'string' ? d.title : '';
+    s.participants = Array.isArray(d.participants)
+      ? d.participants.filter(function (x, i, a) { return typeof x === 'string' && x && a.indexOf(x) === i; }) : [];
+    s.rounder = typeof d.rounder === 'string' && s.participants.indexOf(d.rounder) >= 0 ? d.rounder : (s.participants[0] || '');
+    s.lastDate = typeof d.lastDate === 'string' ? d.lastDate.replace(/[^0-9]/g, '').slice(0, 6) : '';
+    var maxId = 0;
+    (Array.isArray(d.payments) ? d.payments : []).forEach(function (p) {
+      if (!p || typeof p !== 'object') return;
+      if (typeof p.date !== 'string' || typeof p.time !== 'string' || typeof p.what !== 'string') return;
+      if (typeof p.amount !== 'number' || !(p.amount > 0)) return;
+      if (s.participants.indexOf(p.payer) < 0 || !Array.isArray(p.targets)) return;
+      var t = p.targets.filter(function (x) { return s.participants.indexOf(x) >= 0; });
+      if (!t.length) return;
+      var id = typeof p.id === 'number' ? p.id : maxId + 1;
+      maxId = Math.max(maxId, id);
+      s.payments.push({ id: id, date: p.date, time: p.time, what: p.what, amount: Math.floor(p.amount), payer: p.payer, targets: t });
+    });
+    s.nextId = maxId + 1;
+    return s;
+  }
+
+  var S;
+  try { S = sanitize(JSON.parse(localStorage.getItem(KEY))); } catch (e) { S = blank(); }
+  var saveWarned = false;
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(S)); }
+    catch (e) { if (!saveWarned) { saveWarned = true; toast('このiPhoneに保存できませんでした'); } }
+  }
+
+  var ui = { payer: '', targets: new Set(S.participants), editingId: null, tab: 'input' };
+
+  /* ---------- 入力のチェック ---------- */
+  function parseDate(s) {
+    s = onlyDigits(s);
+    if (s.length !== 6) return null;
+    var y = 2000 + Number(s.slice(0, 2)), m = Number(s.slice(2, 4)), d = Number(s.slice(4, 6));
+    var dt = new Date(y, m - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return null;
+    return { iso: y + '-' + pad2(m) + '-' + pad2(d), disp: y + '/' + pad2(m) + '/' + pad2(d), w: YOUBI[dt.getDay()] };
+  }
+  function parseTime(s) {
+    s = onlyDigits(s);
+    if (s.length !== 4) return null;
+    var hh = Number(s.slice(0, 2)), mm = Number(s.slice(2, 4));
+    if (hh > 23 || mm > 59) return null;
+    return s.slice(0, 2) + ':' + s.slice(2);
+  }
+  function parseAmount(s) {
+    s = onlyDigits(s);
+    if (!s || s.length > 9) return null;
+    var v = Number(s);
+    return v > 0 ? v : null;
+  }
+  function isoToDisp(iso) { return iso.replace(/-/g, '/'); }
+  function isoToYYMMDD(iso) { return iso.slice(2).replace(/-/g, ''); }
+
+  /* ---------- 計算(パソコン版と同じ考え方) ---------- */
+  function splitPayment(p, rounder) {
+    var t = p.targets, n = t.length;
+    var base = Math.floor(p.amount / n), rem = p.amount - base * n;
+    var shares = {};
+    t.forEach(function (x) { shares[x] = base; });
+    var who = '';
+    if (rem) {
+      who = t.indexOf(rounder) >= 0 ? rounder : (t.indexOf(p.payer) >= 0 ? p.payer : t[0]);
+      shares[who] += rem;
+    }
+    return { shares: shares, base: base, rem: rem, who: who };
+  }
+
+  function settle(net) {
+    var cred = [], debt = [], out = [];
+    Object.keys(net).forEach(function (k) {
+      if (net[k] > 0) cred.push([k, net[k]]);
+      else if (net[k] < 0) debt.push([k, -net[k]]);
+    });
+    // 1) 金額がぴったり同じ組み合わせを先に消す(送金回数を減らすため)
+    for (var i = debt.length - 1; i >= 0; i--) {
+      for (var j = 0; j < cred.length; j++) {
+        if (debt[i][1] === cred[j][1]) {
+          out.push([debt[i][0], cred[j][0], debt[i][1]]);
+          debt.splice(i, 1);
+          cred.splice(j, 1);
+          break;
+        }
+      }
+    }
+    out.reverse();
+    // 2) 残りは、大きい金額どうしで順番に消す
+    cred.sort(function (a, b) { return b[1] - a[1]; });
+    debt.sort(function (a, b) { return b[1] - a[1]; });
+    var ci = 0, di = 0;
+    while (ci < cred.length && di < debt.length) {
+      var amt = Math.min(cred[ci][1], debt[di][1]);
+      out.push([debt[di][0], cred[ci][0], amt]);
+      cred[ci][1] -= amt;
+      debt[di][1] -= amt;
+      if (cred[ci][1] === 0) ci++;
+      if (debt[di][1] === 0) di++;
+    }
+    return out;
+  }
+
+  function order() {
+    return S.participants.filter(function (x) { return x !== S.rounder; })
+      .concat(S.rounder && S.participants.indexOf(S.rounder) >= 0 ? [S.rounder] : []);
+  }
+
+  function calc() {
+    var paid = {}, owed = {};
+    S.participants.forEach(function (n) { paid[n] = 0; owed[n] = 0; });
+    var total = 0;
+    S.payments.forEach(function (p) {
+      var sp = splitPayment(p, S.rounder);
+      paid[p.payer] += p.amount;
+      total += p.amount;
+      Object.keys(sp.shares).forEach(function (k) { owed[k] += sp.shares[k]; });
+    });
+    var net = {};
+    S.participants.forEach(function (n) { net[n] = paid[n] - owed[n]; });
+    return { paid: paid, owed: owed, net: net, total: total, transfers: settle(net) };
+  }
+
+  function sortPayments() {
+    S.payments.sort(function (a, b) {
+      return a.date < b.date ? -1 : a.date > b.date ? 1 : a.time < b.time ? -1 : a.time > b.time ? 1 : a.id - b.id;
+    });
+  }
+
+  function targetsText(p) {
+    if (p.targets.length === S.participants.length) return '全員(' + p.targets.length + '人)';
+    return order().filter(function (x) { return p.targets.indexOf(x) >= 0; }).join('、');
+  }
+
+  function periodText() {
+    if (!S.payments.length) return '';
+    var ds = S.payments.map(function (p) { return p.date; }).sort();
+    var a = ds[0], b = ds[ds.length - 1];
+    return a === b ? isoToDisp(a) : isoToDisp(a) + '〜' + isoToDisp(b);
+  }
+
+  function buildText() {
+    var c = calc();
+    var lines = [];
+    lines.push('【' + (norm(S.title) || '(無題)') + '】費用精算');
+    lines.push('期間:' + periodText());
+    lines.push('支払い合計:' + yen(c.total) + '(' + S.payments.length + '件)');
+    lines.push('参加者:' + order().join('、'));
+    lines.push('');
+    lines.push('■誰が誰にいくら払うか');
+    if (c.transfers.length) {
+      c.transfers.forEach(function (t) { lines.push(t[0] + ' → ' + t[1] + ':' + yen(t[2])); });
+    } else {
+      lines.push('精算の必要はありません');
+    }
+    lines.push('');
+    lines.push('■個人別(立て替え / 負担 / 差引)');
+    order().forEach(function (n) {
+      lines.push(n + ':' + yen(c.paid[n]) + ' / ' + yen(c.owed[n]) + ' / ' + signedYen(c.net[n]));
+    });
+    lines.push('');
+    lines.push('■明細');
+    S.payments.forEach(function (p) {
+      lines.push(p.date.slice(5).replace('-', '/') + ' ' + p.time + ' ' + p.what + ' ' + yen(p.amount) +
+        '(支払:' + p.payer + ' / 対象:' + targetsText(p) + ')');
+    });
+    return lines.join('\n');
+  }
+
+  /* ---------- 小さなお知らせ ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1800);
+  }
+
+  function showErr(id, msg, focusId) {
+    var e = $(id);
+    e.textContent = msg;
+    e.hidden = false;
+    if (focusId) $(focusId).focus();
+  }
+  function hideErr(id) { $(id).hidden = true; }
+
+  /* ---------- 画面の描き直し ---------- */
+  function renderHeader() {
+    $('hTitle').textContent = norm(S.title);
+    $('tabListBtn').textContent = '一覧' + (S.payments.length ? '(' + S.payments.length + ')' : '');
+  }
+
+  function renderSetup() {
+    var box = $('pList');
+    box.textContent = '';
+    if (!S.participants.length) {
+      box.append(h('div', { class: 'sub' }, 'まだ誰も登録されていません'));
+    }
+    S.participants.forEach(function (n) {
+      box.append(h('span', { class: 'pchip' }, n,
+        h('button', { class: 'x', type: 'button', 'aria-label': n + 'を削除', onclick: function () { removeParticipant(n); } }, '✕')));
+    });
+    var sel = $('rounder');
+    sel.textContent = '';
+    S.participants.forEach(function (n) {
+      var o = h('option', { value: n }, n);
+      if (n === S.rounder) o.selected = true;
+      sel.append(o);
+    });
+    sel.disabled = !S.participants.length;
+  }
+
+  function renderChips() {
+    var pc = $('payerChips'), tc = $('targetChips');
+    pc.textContent = '';
+    tc.textContent = '';
+    S.participants.forEach(function (n) {
+      var on = ui.payer === n;
+      pc.append(h('button', {
+        class: 'chip' + (on ? ' on' : ''), type: 'button', 'aria-pressed': String(on),
+        onclick: function () { ui.payer = n; hideErr('ferr'); renderChips(); }
+      }, n));
+      var t = ui.targets.has(n);
+      tc.append(h('button', {
+        class: 'chip' + (t ? ' on' : ''), type: 'button', 'aria-pressed': String(t),
+        onclick: function () { if (ui.targets.has(n)) ui.targets.delete(n); else ui.targets.add(n); hideErr('ferr'); renderChips(); }
+      }, n));
+    });
+    var enough = S.participants.length >= 2;
+    $('need').hidden = enough;
+    $('submit').disabled = !enough;
+    $('editing').hidden = ui.editingId == null;
+    $('cancelEdit').hidden = ui.editingId == null;
+    $('submit').textContent = ui.editingId == null ? 'この支払いを追加' : 'この内容で更新する';
+  }
+
+  function renderList() {
+    var box = $('payList');
+    box.textContent = '';
+    var total = S.payments.reduce(function (a, p) { return a + p.amount; }, 0);
+    $('listHead').textContent = S.payments.length
+      ? '支払いの一覧(' + S.payments.length + '件・合計' + yen(total) + ')' : '支払いの一覧';
+    if (!S.payments.length) {
+      box.append(h('div', { class: 'sub' }, 'まだ支払いが入力されていません。「入力」から追加してください。'));
+      return;
+    }
+    S.payments.forEach(function (p) {
+      var d = parseDate(isoToYYMMDD(p.date));
+      box.append(h('div', { class: 'pay' },
+        h('div', { class: 'when' }, isoToDisp(p.date) + (d ? '(' + d.w + ')' : '') + ' ' + p.time),
+        h('div', { class: 'what' }, p.what),
+        h('div', { class: 'amt' }, yen(p.amount)),
+        h('div', { class: 'who' }, '支払った人:' + p.payer + ' / 対象:' + targetsText(p)),
+        h('div', { class: 'acts' },
+          h('button', { class: 'btn light small', type: 'button', onclick: function () { startEdit(p.id); } }, '修正'),
+          h('button', { class: 'btn danger small', type: 'button', onclick: function () { removePayment(p.id); } }, '削除'))));
+    });
+  }
+
+  function renderResult() {
+    var body = $('resultBody');
+    body.textContent = '';
+    if (S.participants.length < 2 || !S.payments.length) {
+      body.append(h('div', { class: 'card' }, h('div', { class: 'sub' },
+        '参加者を2人以上登録して、支払いを入力すると、ここに精算結果が出ます。')));
+      return;
+    }
+    var c = calc();
+    var head = h('div', { class: 'card' },
+      h('h2', null, (norm(S.title) || '(無題)') + ' の精算'),
+      h('div', null, '期間:' + periodText()),
+      h('div', null, '支払い合計:' + yen(c.total) + '(' + S.payments.length + '件)'),
+      h('div', { class: 'sub' }, '端数を持つ人:' + S.rounder));
+    body.append(head);
+
+    var tr = h('div', { class: 'card' }, h('h2', null, '誰が誰にいくら払うか'));
+    if (c.transfers.length) {
+      c.transfers.forEach(function (t) {
+        tr.append(h('div', { class: 'transfer' },
+          h('div', { class: 'names' }, t[0] + ' → ' + t[1]),
+          h('div', { class: 'money' }, yen(t[2]))));
+      });
+    } else {
+      tr.append(h('div', { class: 'sub' }, '精算の必要はありません(全員の差引が0円です)。'));
+    }
+    body.append(tr);
+
+    var tbl = h('table', null,
+      h('tr', null, h('th', null, '名前'), h('th', null, '立て替え'), h('th', null, '負担'), h('th', null, '差引')));
+    order().forEach(function (n) {
+      var v = c.net[n];
+      tbl.append(h('tr', null, h('td', null, n), h('td', null, yen(c.paid[n])), h('td', null, yen(c.owed[n])),
+        h('td', { class: v > 0 ? 'plus' : (v < 0 ? 'minus' : '') }, signedYen(v))));
+    });
+    body.append(h('div', { class: 'card' }, h('h2', null, '個人別のまとめ'), tbl));
+
+    var text = buildText();
+    var acts = h('div', { class: 'card' },
+      h('button', { class: 'btn', type: 'button', onclick: function () { shareText(text); } }, '共有する(LINEなど)'),
+      h('button', { class: 'btn light', type: 'button', style: 'margin-top:8px', onclick: function () { copyText(text); } }, '文章をコピーする'),
+      h('details', null, h('summary', null, 'コピーされる文章を見る'), h('pre', null, text)));
+    body.append(acts);
+  }
+
+  function renderAll() {
+    renderHeader();
+    renderSetup();
+    renderChips();
+    renderList();
+    if (ui.tab === 'result') renderResult();
+  }
+
+  /* ---------- タブ ---------- */
+  function showTab(name) {
+    ui.tab = name;
+    TABS.forEach(function (n) {
+      $('tab-' + n).hidden = n !== name;
+      document.querySelector('[data-tab="' + n + '"]').classList.toggle('on', n === name);
+    });
+    if (name === 'result') renderResult();
+    if (name === 'list') renderList();
+    window.scrollTo(0, 0);
+  }
+
+  /* ---------- 参加者 ---------- */
+  function addParticipant() {
+    var name = norm($('pname').value);
+    hideErr('perr');
+    if (!name) { showErr('perr', '名前を入力してください。', 'pname'); return; }
+    if (S.participants.indexOf(name) >= 0) { showErr('perr', '同じ名前の人がすでにいます。', 'pname'); return; }
+    if (S.participants.length >= 20) { showErr('perr', '参加者は20人までです。'); return; }
+    S.participants.push(name);
+    ui.targets.add(name);
+    if (!S.rounder) S.rounder = name;
+    $('pname').value = '';
+    save();
+    renderAll();
+    $('pname').focus();
+  }
+
+  function removeParticipant(name) {
+    hideErr('perr');
+    var used = S.payments.some(function (p) { return p.payer === name || p.targets.indexOf(name) >= 0; });
+    if (used) {
+      showErr('perr', name + ' さんは、入力した支払いで使われているため削除できません。先にその支払いを削除してください。');
+      return;
+    }
+    S.participants = S.participants.filter(function (x) { return x !== name; });
+    ui.targets.delete(name);
+    if (ui.payer === name) ui.payer = '';
+    if (S.rounder === name) S.rounder = S.participants[0] || '';
+    save();
+    renderAll();
+  }
+
+  /* ---------- 支払い ---------- */
+  function updateHints() {
+    var d = parseDate($('fdate').value), dv = onlyDigits($('fdate').value);
+    var dh = $('dateHint');
+    if (d) { dh.textContent = d.disp + '(' + d.w + ')'; dh.className = 'hint ok'; }
+    else { dh.textContent = dv ? '6けたで入力(例 261027)' : ''; dh.className = 'hint'; }
+    var t = parseTime($('ftime').value), tv = onlyDigits($('ftime').value);
+    var th = $('timeHint');
+    if (t) { th.textContent = t; th.className = 'hint ok'; }
+    else { th.textContent = tv ? '4けたで入力(例 1430)' : ''; th.className = 'hint'; }
+    var a = parseAmount($('famount').value);
+    $('amountHint').textContent = a ? yen(a) : '';
+  }
+
+  function resetForm(keepDate) {
+    ui.editingId = null;
+    ui.payer = '';
+    ui.targets = new Set(S.participants);
+    $('fwhat').value = '';
+    $('famount').value = '';
+    $('ftime').value = '';
+    if (!keepDate) $('fdate').value = '';
+    hideErr('ferr');
+    updateHints();
+    renderChips();
+  }
+
+  function submitPayment() {
+    hideErr('ferr');
+    if (S.participants.length < 2) { renderChips(); return; }
+    var d = parseDate($('fdate').value);
+    if (!d) { showErr('ferr', '日付は6けたで入力してください。(例:2026年10月27日 → 261027)', 'fdate'); return; }
+    var t = parseTime($('ftime').value);
+    if (!t) { showErr('ferr', '時間は24時間の4けたで入力してください。(例:午後2時30分 → 1430)', 'ftime'); return; }
+    var what = norm($('fwhat').value);
+    if (!what) { showErr('ferr', '「どこで・何を」を入力してください。', 'fwhat'); return; }
+    var amount = parseAmount($('famount').value);
+    if (!amount) { showErr('ferr', '金額は、1円以上の数字で入力してください。', 'famount'); return; }
+    if (!ui.payer || S.participants.indexOf(ui.payer) < 0) { showErr('ferr', '「支払った人」を選んでください。'); return; }
+    var targets = S.participants.filter(function (n) { return ui.targets.has(n); });
+    if (!targets.length) { showErr('ferr', '「割り勘の対象者」を1人以上選んでください。'); return; }
+
+    var rec = { id: 0, date: d.iso, time: t, what: what, amount: amount, payer: ui.payer, targets: targets };
+    var msg;
+    if (ui.editingId != null) {
+      rec.id = ui.editingId;
+      S.payments = S.payments.map(function (p) { return p.id === rec.id ? rec : p; });
+      msg = '更新しました';
+    } else {
+      rec.id = S.nextId++;
+      S.payments.push(rec);
+      msg = '追加しました';
+    }
+    S.lastDate = onlyDigits($('fdate').value);
+    sortPayments();
+    save();
+    resetForm(true);
+    renderAll();
+    toast(msg);
+    $('ftime').focus();
+  }
+
+  function startEdit(id) {
+    var p = S.payments.filter(function (x) { return x.id === id; })[0];
+    if (!p) return;
+    ui.editingId = p.id;
+    ui.payer = p.payer;
+    ui.targets = new Set(p.targets);
+    $('fdate').value = isoToYYMMDD(p.date);
+    $('ftime').value = p.time.replace(':', '');
+    $('fwhat').value = p.what;
+    $('famount').value = String(p.amount);
+    hideErr('ferr');
+    updateHints();
+    renderChips();
+    showTab('input');
+  }
+
+  function removePayment(id) {
+    if (!window.confirm('この支払いを削除しますか?')) return;
+    S.payments = S.payments.filter(function (p) { return p.id !== id; });
+    if (ui.editingId === id) resetForm(true);
+    save();
+    renderAll();
+    toast('削除しました');
+  }
+
+  /* ---------- コピー・共有 ---------- */
+  function copyText(text) {
+    function fallback() {
+      var ta = h('textarea', { style: 'position:fixed;top:0;left:0;opacity:0' });
+      ta.value = text;
+      document.body.append(ta);
+      ta.focus();
+      ta.select();
+      ta.setSelectionRange(0, text.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      ta.remove();
+      toast(ok ? 'コピーしました' : 'コピーできませんでした');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast('コピーしました'); }, fallback);
+    } else {
+      fallback();
+    }
+  }
+
+  function shareText(text) {
+    if (navigator.share) {
+      navigator.share({ text: text }).catch(function () { /* キャンセルしたときは何もしない */ });
+    } else {
+      copyText(text);
+    }
+  }
+
+  /* ---------- ボタンなどの設定 ---------- */
+  function digitsOnly(el, next) {
+    el.addEventListener('input', function () {
+      var v = onlyDigits(el.value);
+      if (v !== el.value) el.value = v;
+      hideErr('ferr');
+      updateHints();
+      if (next && v.length === el.maxLength) $(next).focus();
+    });
+    el.addEventListener('focus', function () { setTimeout(function () { try { el.select(); } catch (e) { /* 何もしない */ } }, 0); });
+  }
+
+  TABS.forEach(function (n) {
+    document.querySelector('[data-tab="' + n + '"]').addEventListener('click', function () { showTab(n); });
+  });
+
+  $('title').value = S.title;
+  $('title').addEventListener('input', function () { S.title = $('title').value; save(); renderHeader(); });
+  $('padd').addEventListener('click', addParticipant);
+  $('pname').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addParticipant(); } });
+  $('rounder').addEventListener('change', function () { S.rounder = $('rounder').value; save(); renderAll(); });
+  $('reset').addEventListener('click', function () {
+    if (!window.confirm('今の入力内容をすべて消して、新しく始めますか?')) return;
+    S = blank();
+    ui = { payer: '', targets: new Set(), editingId: null, tab: 'setup' };
+    $('title').value = '';
+    $('fdate').value = '';
+    resetForm(false);
+    save();
+    renderAll();
+    showTab('setup');
+    toast('新しく始めます');
+  });
+
+  digitsOnly($('fdate'), 'ftime');
+  digitsOnly($('ftime'), 'fwhat');
+  digitsOnly($('famount'), null);
+  $('fwhat').addEventListener('input', function () { hideErr('ferr'); });
+  $('fwhat').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('famount').focus(); } });
+  $('allOn').addEventListener('click', function () { ui.targets = new Set(S.participants); renderChips(); });
+  $('allOff').addEventListener('click', function () { ui.targets = new Set(); renderChips(); });
+  $('submit').addEventListener('click', submitPayment);
+  $('cancelEdit').addEventListener('click', function () { resetForm(true); });
+
+  $('fdate').value = S.lastDate;
+  updateHints();
+  renderAll();
+  showTab(S.participants.length >= 2 ? 'input' : 'setup');
+})();
+</script>
+</body>
+</html>
